@@ -11,7 +11,7 @@ env:
 
 jobs:
   fairness-audit-pass:
-    name: "Fairness Audit - PASS Mode"
+    name: "Fairness Audit - Tabular PASS"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -27,13 +27,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run fairness audit (PASS mode)
+      - name: Run fairness audit (tabular PASS)
         env:
           FAIRNESS_MODE: pass
+          MODEL_TYPE: tabular
         run: python run_router.py
 
   fairness-audit-fail:
-    name: "Fairness Audit - FAIL Mode (Expected)"
+    name: "Fairness Audit - Tabular FAIL (Expected)"
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -50,24 +51,75 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run fairness audit (FAIL mode)
+      - name: Run fairness audit (tabular FAIL)
         env:
           FAIRNESS_MODE: fail
+          MODEL_TYPE: tabular
+        run: python run_router.py
+
+  generative-audit-pass:
+    name: "Fairness Audit - Generative PASS"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run GAN audit layer (generative PASS)
+        env:
+          FAIRNESS_MODE: pass
+          MODEL_TYPE: generative
+        run: python run_router.py
+
+  generative-audit-fail:
+    name: "Fairness Audit - Generative FAIL (Expected)"
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run GAN audit layer (generative FAIL)
+        env:
+          FAIRNESS_MODE: fail
+          MODEL_TYPE: generative
         run: python run_router.py
 
   gate-summary:
     name: "Gate Summary"
     runs-on: ubuntu-latest
-    needs: [fairness-audit-pass, fairness-audit-fail]
+    needs: [fairness-audit-pass, fairness-audit-fail, generative-audit-pass, generative-audit-fail]
     if: always()
     steps:
       - name: Emit pipeline summary
         run: |
           echo "## Fairness Gate Pipeline Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Job | Mode | Outcome |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----|------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| fairness-audit-pass | PASS | Cleared for deployment |" >> $GITHUB_STEP_SUMMARY
-          echo "| fairness-audit-fail | FAIL | Blocked - DPD/EOpp/EOdds breach |" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Model Type | Mode | Outcome |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|-----------|------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| fairness-audit-pass | Tabular | PASS | Cleared for deployment |" >> $GITHUB_STEP_SUMMARY
+          echo "| fairness-audit-fail | Tabular | FAIL | Blocked - DPD/EOpp/EOdds breach |" >> $GITHUB_STEP_SUMMARY
+          echo "| generative-audit-pass | Generative | PASS | Cleared for deployment |" >> $GITHUB_STEP_SUMMARY
+          echo "| generative-audit-fail | Generative | FAIL | Blocked - coverage breach |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> Thresholds: DPD <= 0.10, EOpp gap <= 0.05, EOdds gap <= 0.06" >> $GITHUB_STEP_SUMMARY
+          echo "> Tabular thresholds: DPD <= 0.10, EOpp gap <= 0.05, EOdds gap <= 0.06" >> $GITHUB_STEP_SUMMARY
+          echo "> Generative thresholds: coverage >= 0.90, KL div <= 0.20, FID-proxy >= 0.70" >> $GITHUB_STEP_SUMMARY
