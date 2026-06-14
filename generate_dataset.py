@@ -1,7 +1,8 @@
 ﻿"""
-Synthetic Property Valuation Dataset Generator
+Synthetic Property Valuation Dataset Generator v2
 Boyaca Region, Colombia -- UPTC AI Laboratory
-Generates 8,500 records with controlled DPD injection of 0.287
+High signal-to-noise ratio for XGBoost accuracy ~0.89
+Controlled DPD injection at 0.287
 """
 
 import numpy as np
@@ -23,18 +24,18 @@ def generate_dataset(seed=42):
     income_group = np.array(["High"] * N_HIGH + ["Low"] * N_LOW)
     is_high = (income_group == "High").astype(float)
 
-    location_score     = (rng.normal(0.57, 0.15, n) + 0.165 * is_high).clip(0, 1)
-    neigh_low          = (rng.binomial(1, 0.45, n) - 0.245 * is_high).clip(0, 1)
-    property_size      = rng.normal(118, 38, n).clip(30, 400) + 31 * is_high
-    proximity          = (rng.normal(0.53, 0.15, n) + 0.14 * is_high).clip(0, 1)
+    location_score     = (rng.normal(0.57, 0.12, n) + 0.135 * is_high).clip(0, 1)
+    neigh_low          = (rng.binomial(1, 0.45, n) - 0.21 * is_high).clip(0, 1)
+    property_size      = rng.normal(118, 30, n).clip(30, 400) + 27 * is_high
+    proximity          = (rng.normal(0.53, 0.12, n) + 0.115 * is_high).clip(0, 1)
     construction_year  = rng.integers(1965, 2023, n).astype(float)
     num_rooms          = rng.integers(1, 8, n).astype(float)
     floor_level        = rng.integers(1, 12, n).astype(float)
-    distance_to_center = (rng.normal(6.5, 2.8, n) - 2.3 * is_high).clip(0.5, 20)
-    lot_size           = rng.normal(170, 55, n).clip(40, 600) + 38 * is_high
-    building_condition = (rng.normal(3.0, 0.9, n) + 0.57 * is_high).clip(1, 5)
-    access_utilities   = (rng.binomial(1, 0.75, n) + 0.16 * is_high).clip(0, 1)
-    school_proximity   = (rng.normal(0.52, 0.15, n) + 0.12 * is_high).clip(0, 1)
+    distance_to_center = (rng.normal(6.5, 2.5, n) - 1.9 * is_high).clip(0.5, 20)
+    lot_size           = rng.normal(170, 45, n).clip(40, 600) + 31 * is_high
+    building_condition = (rng.normal(3.0, 0.8, n) + 0.47 * is_high).clip(1, 5)
+    access_utilities   = (rng.binomial(1, 0.75, n) + 0.13 * is_high).clip(0, 1)
+    school_proximity   = (rng.normal(0.52, 0.12, n) + 0.10 * is_high).clip(0, 1)
 
     df = pd.DataFrame({
         "location_score":                location_score,
@@ -56,14 +57,13 @@ def generate_dataset(seed=42):
         return (col - col.min()) / (col.max() - col.min() + 1e-9)
 
     score = (
-          0.28 * norm(df["location_score"])
-        + 0.18 * (1 - df["neighborhood_income_level_Low"])
-        + 0.20 * norm(df["property_size"])
-        + 0.13 * norm(df["proximity_to_services"])
-        + 0.09 * norm(df["building_condition"])
-        + 0.08 * df["access_to_utilities"]
-        + 0.04 * norm(df["school_proximity"])
-        + rng.normal(0, 0.14, n)
+          0.30 * norm(df["location_score"])
+        + 0.22 * (1 - df["neighborhood_income_level_Low"])
+        + 0.22 * norm(df["property_size"])
+        + 0.12 * norm(df["proximity_to_services"])
+        + 0.08 * norm(df["building_condition"])
+        + 0.06 * df["access_to_utilities"]
+        + rng.normal(0, 0.055, n)
     )
 
     threshold = np.percentile(score, 50)
@@ -80,7 +80,7 @@ def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     print("=" * 60)
-    print("SYNTHETIC PROPERTY VALUATION DATASET GENERATOR")
+    print("SYNTHETIC PROPERTY VALUATION DATASET GENERATOR v2")
     print("UPTC AI Laboratory -- Boyaca Region, Colombia")
     print("=" * 60)
     print(f"Target records  : {N:,} ({N_HIGH:,} high-income / {N_LOW:,} low-income)")
@@ -95,7 +95,8 @@ def main():
         df = generate_dataset(seed)
         dpd, hi_rate, lo_rate = verify_dpd(df)
         dpds.append(dpd)
-        print(f"  Seed {seed:>4}  |  DPD = {dpd:.3f}  |  SR_High = {hi_rate:.3f}  |  SR_Low = {lo_rate:.3f}")
+        print(f"  Seed {seed:>4}  |  DPD = {dpd:.3f}  |  "
+              f"SR_High = {hi_rate:.3f}  |  SR_Low = {lo_rate:.3f}")
 
     mean_dpd = np.mean(dpds)
     std_dpd  = np.std(dpds)
