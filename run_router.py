@@ -1,5 +1,5 @@
 ﻿"""
-Fairness Gate — Audit Router
+Fairness Gate - Audit Router
 """
 
 import sys
@@ -10,27 +10,21 @@ MODE = os.environ.get("FAIRNESS_MODE", "pass").lower()
 
 METRICS = {
     "pass": {
-        "dpd":        0.042,
-        "eodds":      0.031,
-        "fpr_gap":    0.028,
-        "fnr_gap":    0.019,
-        "shap_drift": 0.004,
+        "dpd":       0.042,
+        "eopp_gap":  0.031,
+        "eodds_gap": 0.038,
     },
     "fail": {
-        "dpd":        0.183,
-        "eodds":      0.141,
-        "fpr_gap":    0.162,
-        "fnr_gap":    0.097,
-        "shap_drift": 0.031,
+        "dpd":       0.183,
+        "eopp_gap":  0.091,
+        "eodds_gap": 0.112,
     },
 }
 
 THRESHOLDS = {
-    "dpd":        0.100,
-    "eodds":      0.100,
-    "fpr_gap":    0.100,
-    "fnr_gap":    0.100,
-    "shap_drift": 0.020,
+    "dpd":       0.100,
+    "eopp_gap":  0.050,
+    "eodds_gap": 0.060,
 }
 
 def log(msg, level="INFO"):
@@ -64,12 +58,12 @@ def main():
     log("Dataset size (synthetic)  : 12,400 rows")
     time.sleep(0.4)
 
-    separator("STAGE 2 - Fairlearn + SHAP Audit")
+    separator("STAGE 2 - Fairlearn Audit")
     log("Running demographic parity analysis...")
     time.sleep(0.3)
     log("Running equalized odds evaluation...")
     time.sleep(0.3)
-    log("Running SHAP feature attribution drift check...")
+    log("Running equalized opportunity gap analysis...")
     time.sleep(0.3)
 
     separator("AUDIT METRICS")
@@ -81,23 +75,7 @@ def main():
         print(f"  {key:<28} {value:>8.3f}   {thresh:>10.3f}   {status}")
     print()
 
-    separator("STAGE 3 - SHAP Attribution Report")
-    features = [
-        ("credit_score",    0.341),
-        ("income_band",     0.218),
-        ("loan_duration",   0.174),
-        ("employment_type", 0.098),
-        ("age_group",       0.071),
-        ("gender",          0.023),
-        ("race",            0.011),
-    ]
-    for feat, importance in features:
-        bar = "#" * int(importance * 40)
-        tag = "  <- protected attr" if feat in ("age_group", "gender", "race") else ""
-        print(f"  {feat:<22} {importance:.3f}  {bar}{tag}")
-    print()
-
-    separator("STAGE 4 - Gate Decision")
+    separator("STAGE 3 - Gate Decision")
     violations = [k for k, v in metrics.items() if v > THRESHOLDS[k]]
     decision = "HOLD" if violations else "PASS"
 

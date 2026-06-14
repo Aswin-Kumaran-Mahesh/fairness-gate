@@ -1,0 +1,28 @@
+﻿name: Fairness Gate - Enforcement Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fairness-audit-enforce:
+    name: "Fairness Audit - Enforcement (Model Blocked)"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run fairness audit (threshold breach)
+        env:
+          FAIRNESS_MODE: fail
+        run: python run_router.py
