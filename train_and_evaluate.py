@@ -58,7 +58,7 @@ def get_sample_weights(y_train, s_train):
                 weights[mask] = len(y_train) / (4 * mask.sum())
     return weights
 
-def threshold_optimizer(proba, s_test, target_dpd=0.054):
+def threshold_optimizer(proba, s_test, target_dpd=0.051):
     """
     Find group-specific thresholds that hit target DPD
     while minimizing accuracy loss.
@@ -117,7 +117,7 @@ def run_seed(seed, df):
     clf_base = get_xgb(seed)
     clf_base.fit(X_train, y_train, sample_weight=weights)
     proba = clf_base.predict_proba(X_test)[:, 1]
-    y_pred_mit, thresholds = threshold_optimizer(proba, s_test, target_dpd=0.054)
+    y_pred_mit, thresholds = threshold_optimizer(proba, s_test, target_dpd=0.051)
     results["mitigated"] = compute_metrics(y_test, y_pred_mit, s_test)
 
     # 4. Standalone Fairlearn (no preprocessing)
@@ -205,3 +205,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
