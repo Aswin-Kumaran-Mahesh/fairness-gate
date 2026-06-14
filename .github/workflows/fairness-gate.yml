@@ -68,6 +68,6 @@ jobs:
           echo "| Job | Mode | Outcome |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|------|---------|" >> $GITHUB_STEP_SUMMARY
           echo "| fairness-audit-pass | PASS | Cleared for deployment |" >> $GITHUB_STEP_SUMMARY
-          echo "| fairness-audit-fail | FAIL | Blocked - DPD/EOdds breach |" >> $GITHUB_STEP_SUMMARY
+          echo "| fairness-audit-fail | FAIL | Blocked - DPD/EOpp/EOdds breach |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> Thresholds: DPD <= 0.10, EOdds <= 0.10, FPR gap <= 0.10, SHAP drift <= 0.02" >> $GITHUB_STEP_SUMMARY
+          echo "> Thresholds: DPD <= 0.10, EOpp gap <= 0.05, EOdds gap <= 0.06" >> $GITHUB_STEP_SUMMARY
