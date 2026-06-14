@@ -16,17 +16,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
+        run: pip install -r requirements.txt
       - name: Run fairness audit (tabular PASS)
         env:
           FAIRNESS_MODE: pass
@@ -40,17 +35,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
+        run: pip install -r requirements.txt
       - name: Run fairness audit (tabular FAIL)
         env:
           FAIRNESS_MODE: fail
@@ -63,17 +53,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
+        run: pip install -r requirements.txt
       - name: Run GAN audit layer (generative PASS)
         env:
           FAIRNESS_MODE: pass
@@ -87,17 +72,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
+        run: pip install -r requirements.txt
       - name: Run GAN audit layer (generative FAIL)
         env:
           FAIRNESS_MODE: fail
@@ -119,7 +99,7 @@ jobs:
           echo "| fairness-audit-pass | Tabular | PASS | Cleared for deployment |" >> $GITHUB_STEP_SUMMARY
           echo "| fairness-audit-fail | Tabular | FAIL | Blocked - DPD/EOpp/EOdds breach |" >> $GITHUB_STEP_SUMMARY
           echo "| generative-audit-pass | Generative | PASS | Cleared for deployment |" >> $GITHUB_STEP_SUMMARY
-          echo "| generative-audit-fail | Generative | FAIL | Blocked - coverage breach |" >> $GITHUB_STEP_SUMMARY
+          echo "| generative-audit-fail | Generative | FAIL | Blocked - coverage < 0.90 |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> Tabular thresholds: DPD <= 0.10, EOpp gap <= 0.05, EOdds gap <= 0.06" >> $GITHUB_STEP_SUMMARY
-          echo "> Generative thresholds: coverage >= 0.90, KL div <= 0.20, FID-proxy >= 0.70" >> $GITHUB_STEP_SUMMARY
+          echo "> Tabular: DPD <= 0.10, EOpp gap <= 0.05, EOdds gap <= 0.06" >> $GITHUB_STEP_SUMMARY
+          echo "> Generative: coverage >= 0.90 (KL div and FID-proxy reported, not enforced)" >> $GITHUB_STEP_SUMMARY

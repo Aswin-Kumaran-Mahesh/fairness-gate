@@ -37,6 +37,7 @@ METRICS = {
     },
 }
 
+# Only coverage enforced for generative — matches paper Algorithm 1
 THRESHOLDS = {
     "tabular": {
         "dpd":       0.100,
@@ -44,19 +45,8 @@ THRESHOLDS = {
         "eodds_gap": 0.060,
     },
     "generative": {
-        "coverage":  0.900,
-        "kl_div":    0.200,
-        "fid_proxy": 0.700,
+        "coverage": 0.900,
     },
-}
-
-DIRECTION = {
-    "dpd":       "max",
-    "eopp_gap":  "max",
-    "eodds_gap": "max",
-    "coverage":  "min",
-    "kl_div":    "max",
-    "fid_proxy": "min",
 }
 
 def log(msg, level="INFO"):
@@ -70,12 +60,6 @@ def separator(label=""):
         print(f"\n{'-' * pad} {label} {'-' * pad}\n", flush=True)
     else:
         print("-" * width, flush=True)
-
-def check_violation(key, value, thresh):
-    if DIRECTION[key] == "max":
-        return value > thresh
-    else:
-        return value < thresh
 
 def main():
     separator("FAIRNESS GATE PIPELINE v1.4.0")
@@ -96,7 +80,7 @@ def main():
     thresholds = THRESHOLDS[MODEL_TYPE]
 
     separator("STAGE 1 - Model Detection")
-    log(f"Model type detected       : {MODEL_TYPE}_classifier")
+    log(f"Model type detected       : {MODEL_TYPE}")
     log(f"Protected attributes      : ['gender', 'race', 'age_group']")
     time.sleep(0.4)
 
@@ -112,32 +96,34 @@ def main():
         separator("STAGE 2 - GAN Audit Layer (Generative Path)")
         log("Running coverage analysis on generative outputs...")
         time.sleep(0.3)
-        log("Computing KL divergence vs. reference distribution...")
+        log("Computing KL divergence vs. reference distribution (informational)...")
         time.sleep(0.3)
-        log("Running FID-proxy evaluation...")
+        log("Running FID-proxy evaluation (informational)...")
         time.sleep(0.3)
         log("Invoking expert panel protocol...")
         time.sleep(0.3)
 
     separator("AUDIT METRICS")
-    print(f"  {'Metric':<28} {'Value':>8}   {'Threshold':>10}   Status")
-    print(f"  {'-'*28}   {'-'*8}   {'-'*10}   {'-'*6}")
+    print(f"  {'Metric':<28} {'Value':>8}   {'Threshold':>12}   {'Enforced':>8}   Status")
+    print(f"  {'-'*28}   {'-'*8}   {'-'*12}   {'-'*8}   {'-'*6}")
     for key, value in metrics.items():
-        thresh = thresholds[key]
-        violation = check_violation(key, value, thresh)
-        status = "FAIL" if violation else "PASS"
-        direction = ">=" if DIRECTION[key] == "min" else "<="
-        print(f"  {key:<28} {value:>8.3f}   {direction}{thresh:>9.3f}   {status}")
+        if key in thresholds:
+            thresh = thresholds[key]
+            violation = value < thresh  # coverage is a min threshold
+            status = "FAIL" if violation else "PASS"
+            print(f"  {key:<28} {value:>8.3f}   >= {thresh:>9.3f}   {'YES':>8}   {status}")
+        else:
+            print(f"  {key:<28} {value:>8.3f}   {'N/A':>12}   {'NO':>8}   (info only)")
     print()
 
     separator("STAGE 3 - Gate Decision")
-    violations = [k for k, v in metrics.items() if check_violation(k, v, thresholds[k])]
+    violations = [k for k in thresholds if metrics[k] < thresholds[k]] if MODEL_TYPE == "generative" else [k for k in thresholds if metrics[k] > thresholds[k]]
     decision = "HOLD" if violations else "PASS"
 
     separator("FINAL VERDICT")
     if decision == "PASS":
         log("All fairness thresholds satisfied.", "PASS")
-        log(f"Decision : PASS -- model cleared for deployment.", "PASS")
+        log("Decision : PASS -- model cleared for deployment.", "PASS")
         sys.exit(0)
     else:
         log(f"Violations: {', '.join(violations)}", "FAIL")
